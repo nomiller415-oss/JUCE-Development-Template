@@ -17,7 +17,7 @@ include(JUCEDefaults)
 # This is the internal name of the project and the name of JUCE's shared code target
 # Note: This cannot have spaces (it may be 2024, but you can't have it all!)
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs display)
-set(PROJECT_NAME "TutorialPlugins")
+set(PROJECT_NAME "NewProject")
 
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs will display)
 # You can also just have it be the same thing as PROJECT_NAME
@@ -25,13 +25,13 @@ set(PROJECT_NAME "TutorialPlugins")
 #   set(PROJECT_NAME "MyPlugin_v${MAJOR_VERSION}")
 # Doing so enables major versions to show up in IDEs and DAWs as separate plugins
 # allowing you to change parameters and behavior without breaking existing user projects
-set(PRODUCT_NAME "Tutorial Plugin")
+set(PRODUCT_NAME "New Product")
 
 # Change me! Used for the MacOS bundle name and Installers
-set(COMPANY_NAME "Noah Company")
+set(COMPANY_NAME "Noah Miller")
 
 # Change me! Used for the MacOS bundle identifier (and signing)
-set(BUNDLE_ID "com.Noah.Noah")
+set(BUNDLE_ID "com.Noah.Miller")
 
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
@@ -65,6 +65,16 @@ add_subdirectory(modules/clap-juce-extensions EXCLUDE_FROM_ALL)
 
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
+
+if(MSVC)
+    # Automatically fetch the NuGet package via CMake
+    execute_process(
+        COMMAND nuget install Microsoft.Web.WebView2 -OutputDirectory "${CMAKE_BINARY_DIR}/_deps/Nuget"
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
+    # Inform JUCE where to find the package
+    set(JUCE_WEBVIEW2_PACKAGE_LOCATION "${CMAKE_BINARY_DIR}/_deps/Nuget")
+endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
