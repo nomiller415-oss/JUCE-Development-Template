@@ -82,6 +82,12 @@ jobs:
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
+       
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Configure CMake
+        run: cmake -B build -S .
 
       - name: Checkout code
         uses: actions/checkout@v7
