@@ -88,8 +88,7 @@ if(MSVC)
         if(NOT NUGET_RESULT EQUAL 0)
             message(FATAL_ERROR "Failed to download WebView2 via NuGet.")
         endif()
-        find_package(WebView2 REQUIRED)
-        message(STATUS ${WEBVIEW2_DIR})
+       
         
         
 
