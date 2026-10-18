@@ -123,34 +123,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Configure (clear build dir, inject GTK flags, capture output)
-        run: |
-          set -euxo pipefail
+      - name: Cache the build
+        uses: mozilla-actions/sccache-action@v0.0.11
 
-          # remove any stale build state so CMake re-detects system deps
-          rm -rf "${{ env.BUILD_DIR }}"
-
-          # get GTK flags (if pkg-config isn't available this will be empty)
-          PKG_CFLAGS="$(pkg-config --cflags gtk+-3.0 2>/dev/null || true)"
-          PKG_LIBS="$(pkg-config --libs gtk+-3.0 2>/dev/null || true)"
-
-          echo "PKG_CFLAGS=${PKG_CFLAGS}"
-          echo "PKG_LIBS=${PKG_LIBS}"
-
-          # Configure; force GTK flags into C/C++ and link flags as a temporary workaround.
-          cmake -B "${{ env.BUILD_DIR }}" \
-            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
-            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-            ${{ matrix.extra-flags }} \
-            -DCMAKE_C_FLAGS="${PKG_CFLAGS}" \
-            -DCMAKE_CXX_FLAGS="${PKG_CFLAGS}" \
-            -DCMAKE_EXE_LINKER_FLAGS="${PKG_LIBS}" \
-            -DCMAKE_SHARED_LINKER_FLAGS="${PKG_LIBS}" \
-            . 2>&1 | tee cmake-configure.log
-
-      - name: Build (verbose)
-        run: cmake --build "${{ env.BUILD_DIR }}" --config "${{ env.BUILD_TYPE }}" --verbose
+      - name: Configure
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ${{ matrix.extra-flags }} .
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
