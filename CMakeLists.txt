@@ -77,25 +77,17 @@ if(MSVC)
         file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${NUGET_EXE}")
     endif()
 
-    set(WEBVIEW2_DIR "${PACKAGES_DIR}/Microsoft.Web.WebView2")
-    message(STATUS "${WEBVIEW2_DIR}")
-    if(NOT EXISTS "${WEBVIEW2_DIR}")
-        message(STATUS "Downloading WebView2 NuGet package...")
-        execute_process( COMMAND ${NUGET_EXE} install Microsoft.Web.WebView2 
-                    -OutputDirectory "${WEBVIEW2_DIR}"
-            RESULT_VARIABLE NUGET_RESULT
-        )
-        if(NOT NUGET_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to download WebView2 via NuGet.")
-        endif()
-       
-        
-        
-
-        
-        
-    endif()
-
+    set(WEBVIEW2_VERSION "1.0.1901.177")
+    
+    find_program(NUGET_EXE NAMES nuget REQUIRED)
+    
+    # Download the package to the build directory
+    execute_process(
+        COMMAND ${NUGET_EXE} install Microsoft.Web.WebView2 -OutputDirectory "${CMAKE_BINARY_DIR}/packages"
+    )
+    
+    # Point JUCE to the exact folder containing the downloaded NuGet package
+    set(JUCE_WEBVIEW2_PACKAGE_LOCATION "${CMAKE_BINARY_DIR}/packages")
 endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
