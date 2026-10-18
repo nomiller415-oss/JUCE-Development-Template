@@ -77,16 +77,19 @@ if(MSVC)
         file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${NUGET_EXE}")
     endif()
 
-    set(WEBVIEW2_DIR "${PACKAGES_DIR}/Microsoft.Web.WebView2.${WEBVIEW2_VERSION}")
+    set(WEBVIEW2_DIR "${PACKAGES_DIR}/Microsoft.Web.WebView2")
+    message(STATUS "${WEBVIEW2_DIR}")
     if(NOT EXISTS "${WEBVIEW2_DIR}")
         message(STATUS "Downloading WebView2 NuGet package...")
         execute_process( COMMAND ${NUGET_EXE} install Microsoft.Web.WebView2 
-                    -OutputDirectory "${PACKAGES_DIR}"
+                    -OutputDirectory "${WEBVIEW2_DIR}"
             RESULT_VARIABLE NUGET_RESULT
         )
         if(NOT NUGET_RESULT EQUAL 0)
             message(FATAL_ERROR "Failed to download WebView2 via NuGet.")
         endif()
+
+        
         
     endif()
 
