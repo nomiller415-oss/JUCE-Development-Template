@@ -133,9 +133,6 @@ jobs:
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
 
-      - name: Print
-        run: dir /s packages
-
       - name: Test & Benchmarks
         working-directory: ${{ env.BUILD_DIR }}
         run: ctest --verbose --output-on-failure
