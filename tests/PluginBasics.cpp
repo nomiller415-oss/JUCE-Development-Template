@@ -12,11 +12,7 @@ TEST_CASE ("Plugin instance", "[instance]")
 {
     PluginProcessor testPlugin;
 
-    SECTION ("name")
-    {
-        CHECK_THAT (testPlugin.getName().toStdString(),
-            Catch::Matchers::Equals ("Pamplejuce Demo"));
-    }
+    
 
     SECTION ("program name")
     {

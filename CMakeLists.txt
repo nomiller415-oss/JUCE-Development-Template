@@ -67,13 +67,29 @@ add_subdirectory(modules/clap-juce-extensions EXCLUDE_FROM_ALL)
 add_subdirectory (modules/melatonin_inspector)
 
 if(MSVC)
-    # Automatically fetch the NuGet package via CMake
-    execute_process(
-        COMMAND nuget install Microsoft.Web.WebView2 -OutputDirectory "${CMAKE_BINARY_DIR}/_deps/Nuget"
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-    )
-    # Inform JUCE where to find the package
-    set(JUCE_WEBVIEW2_PACKAGE_LOCATION "${CMAKE_BINARY_DIR}/_deps/Nuget")
+    set(NUGET_DIR "${CMAKE_BINARY_DIR}/nuget")
+    set(NUGET_EXE "${NUGET_DIR}/nuget.exe")
+    set(PACKAGES_DIR "${CMAKE_BINARY_DIR}/packages")
+
+    if(NOT EXISTS "${NUGET_EXE}")
+        message(STATUS "[WebView2] Downloading nuget.exe...")
+        file(MAKE_DIRECTORY "${NUGET_DIR}")
+        file(DOWNLOAD "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" "${NUGET_EXE}")
+    endif()
+
+    set(WEBVIEW2_DIR "${PACKAGES_DIR}/Microsoft.Web.WebView2.${WEBVIEW2_VERSION}")
+    if(NOT EXISTS "${WEBVIEW2_DIR}")
+        message(STATUS "Downloading WebView2 NuGet package...")
+        execute_process( COMMAND ${NUGET_EXE} install Microsoft.Web.WebView2 
+                    -OutputDirectory "${PACKAGES_DIR}"
+            RESULT_VARIABLE NUGET_RESULT
+        )
+        if(NOT NUGET_RESULT EQUAL 0)
+            message(FATAL_ERROR "Failed to download WebView2 via NuGet.")
+        endif()
+        
+    endif()
+
 endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
