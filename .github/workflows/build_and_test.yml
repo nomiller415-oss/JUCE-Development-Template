@@ -92,29 +92,28 @@ jobs:
       - name: Debug GTK
         if: ${{ runner.os == 'Linux'}}
         run: |
-          set -x
+          set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y pkg-config libgtk-3-dev || true
-      
+          sudo apt-get install -y pkg-config libgtk-3-dev
+
           echo "===== pkg-config versions ====="
-          pkg-config --version 2>/dev/null || echo "pkg-config: not found"
-          echo "gtk+-3.0 modversion: $(pkg-config --modversion gtk+-3.0 2>/dev/null || echo not-found)"
-          echo "gtk4 cflags: $(pkg-config --cflags gtk4 2>/dev/null || echo not-found)"
+          pkg-config --version
+          echo "gtk+-3.0 modversion: $(pkg-config --modversion gtk+-3.0)"
           echo "pkg-config --list-all | grep -i gtk:"
           pkg-config --list-all | grep -i gtk || true
-      
+
           echo "===== GTK headers ====="
-          ls -l /usr/include/gtk-3.0/gtk/gtk.h /usr/include/gtk-4.0/gtk/gtk.h 2>/dev/null || true
-      
+          ls -l /usr/include/gtk-3.0/gtk/gtk.h
+
           echo "===== Installed GTK packages (dpkg) ====="
           dpkg -l | grep -E 'libgtk|libgdk|libgdk-pixbuf|libpango' || true
-      
+
           echo "===== Compiler ====="
           which c++ || true
           c++ --version || true
-      
+
           echo "===== CMake: try to find GTK via pkg-config ====="
-          pkg-config --cflags --libs gtk+-3.0 2>/dev/null || echo "pkg-config failed to find gtk+-3.0"
+          pkg-config --cflags --libs gtk+-3.0
         
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
