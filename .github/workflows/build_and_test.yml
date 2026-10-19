@@ -123,44 +123,18 @@ jobs:
       - name: Configure
         if: runner.os == 'Linux'
         run: |
-          # ensure pkg-config path is present for this step too
+          # Ensure pkg-config path is set up cleanly
           export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-
-          GTK_CFLAGS="$(pkg-config --cflags gtk+-3.0 2>/dev/null || true)"
-          GTK_LIBS="$(pkg-config --libs gtk+-3.0 2>/dev/null || true)"
-
-          WEBKIT_CFLAGS="$(pkg-config --cflags webkit2gtk-4.0 2>/dev/null || true)"
-          WEBKIT_LIBS="$(pkg-config --libs webkit2gtk-4.0 2>/dev/null || true)"
-
-          # combine
-          ALL_CFLAGS="${GTK_CFLAGS} ${WEBKIT_CFLAGS}"
-          ALL_LIBS="${GTK_LIBS} ${WEBKIT_LIBS}"
-
-          echo "--- GTK CFLAGS ---"
-          echo "$GTK_CFLAGS"
-          echo "--- WEBKIT CFLAGS ---"
-          echo "$WEBKIT_CFLAGS"
-          echo "--- ALL CFLAGS ---"
-          echo "$ALL_CFLAGS"
-          echo "--- ALL LIBS ---"
-          echo "$ALL_LIBS"
-
-          # force fresh configure so CMake doesn't use stale cache
+          
+          # Force fresh configure so CMake doesn't use a stale cache
           rm -rf "${{ env.BUILD_DIR }}"
-
-          CFLAGS="$ALL_CFLAGS" \
-          CXXFLAGS="$ALL_CFLAGS" \
-          LDFLAGS="$ALL_LIBS" \
-          cmake -B "${{ env.BUILD_DIR }}" \
+          
+          # Let CMake natively find and attach GTK/WebKit flags to the target graphs
+          cmake -B "${{ env.BUILD_DIR }}" -G Ninja \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
             -DCMAKE_VERBOSE_MAKEFILE=ON \
-            -DCMAKE_C_FLAGS="$ALL_CFLAGS" \
-            -DCMAKE_CXX_FLAGS="$ALL_CFLAGS" \
-            -DCMAKE_EXE_LINKER_FLAGS="$ALL_LIBS" \
-            -DCMAKE_SHARED_LINKER_FLAGS="$ALL_LIBS" \
-            -DCMAKE_MODULE_LINKER_FLAGS="$ALL_LIBS" \
             ${{ matrix.extra-flags }}
 
       - name: Build
