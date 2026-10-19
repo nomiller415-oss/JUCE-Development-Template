@@ -129,6 +129,15 @@ jobs:
             -DCMAKE_VERBOSE_MAKEFILE=ON \
             ${{ matrix.extra-flags }}
 
+      - name: Diagnostic - Locate Subprocess Helper File
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== Searching for the missing header file ==="
+          find . -name "*juce_LinuxSubprocessHelperBinaryData.h*" || true
+          
+          echo "=== Checking juceaide generation artifacts ==="
+          find . -type d -name "*juce_LinuxSubprocessHelper*" || true
+
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --
 
