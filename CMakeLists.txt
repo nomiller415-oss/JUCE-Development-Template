@@ -206,15 +206,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     # Force paths globally so JUCE targets (like juce_gui_extra) find <gtk/gtk.h>
     include_directories(SYSTEM 
-        \({GTK3_INCLUDE_DIRS}\){WEBKIT_GTK_INCLUDE_DIRS}
+        ${GTK3_INCLUDE_DIRS}
+        ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Apply compiled options and libraries specifically to the main targets
-    target_compile_options("\${PROJECT_NAME}" PRIVATE \({WEBKIT_GTK_CFLAGS_OTHER}\){GTK3_CFLAGS_OTHER})
-    target_link_libraries("\${PROJECT_NAME}" PRIVATE \({WEBKIT_GTK_LIBRARIES}\){GTK3_LIBRARIES})
-    
-    target_compile_options(SharedCode INTERFACE \({WEBKIT_GTK_CFLAGS_OTHER}\){GTK3_CFLAGS_OTHER})
-    target_link_libraries(SharedCode INTERFACE \({WEBKIT_GTK_LIBRARIES}\){GTK3_LIBRARIES})
+    # Link entirely to SharedCode. This automatically propagates the flags 
+    # downstream to all plugin formats (Standalone, VST3, etc.) and tests.
+    target_compile_options(SharedCode INTERFACE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
+    target_link_libraries(SharedCode INTERFACE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
 endif()
 
 # IPP support, comment out to disable
