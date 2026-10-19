@@ -204,36 +204,34 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Force system paths globally so JUCE modules resolve <gtk/gtk.h>
+    # Force system paths globally so JUCE modules resolve <gtk/gtk.h> and <webkit2/webkit.h>
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Safely forward libraries to the SharedCode interface wrapper
+    # Link the libraries safely via the INTERFACE dependency bubble
     target_link_libraries(SharedCode INTERFACE 
         ${WEBKIT_GTK_LIBRARIES} 
         ${GTK3_LIBRARIES}
     )
 
-    # RECOVERY FOR GENERATOR EXPRESSION RACES:
-    # Instead of applying to the global folder context, we bind the dynamic 
-    # configuration path directly onto the post-generation hooks of your targets.
-    # This automatically tracks whether GitHub Actions is compiling a Standalone app, VST3, etc.
-    foreach(format ${FORMATS})
-        set(target_format_name "${PROJECT_NAME}_${format}")
-        
-        # Verify the internal JUCE generated target exists before altering properties
-        if(TARGET ${target_format_name})
-            target_include_directories(${target_format_name} PRIVATE
-                "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
-            )
-            target_compile_options(${target_format_name} PRIVATE 
-                ${WEBKIT_GTK_CFLAGS_OTHER} 
-                ${GTK3_CFLAGS_OTHER}
-            )
+    # THE CORE JUCE 8/9 LINUX BUGFIX:
+    # JUCE assigns the generated subprocess folder paths dynamically as a PRIVATE property
+    # to 'juce_gui_extra'. Because 'SharedCode' evaluates your source code, we extract 
+    # JUCE's internal generation directories and map them directly into our global include stream.
+    if(TARGET juce_gui_extra)
+        get_target_property(JUCE_EXTRA_INCLUDES juce_gui_extra INCLUDE_DIRECTORIES)
+        if(JUCE_EXTRA_INCLUDES)
+            include_directories(${JUCE_EXTRA_INCLUDES})
         endif()
-    endforeach()
+        
+        # Explicitly forward paths into the SharedCode target bubble as well
+        target_include_directories(SharedCode INTERFACE
+            "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
+            "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/"
+        )
+    endif()
 endif()
 
 
