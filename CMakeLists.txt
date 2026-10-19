@@ -90,6 +90,23 @@ if(MSVC)
     set(JUCE_WEBVIEW2_PACKAGE_LOCATION "${CMAKE_BINARY_DIR}/packages")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(PkgConfig REQUIRED)
+    
+    # Try finding webkit2gtk-4.1 first, fall back to 4.0 if not present
+    pkg_check_modules(WEBKIT_GTK webkit2gtk-4.1)
+    if(NOT WEBKIT_GTK_FOUND)
+        pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.0)
+    endif()
+    
+    pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+
+    # Replace "YourProjectTargetName" with your actual CMake target binary/plugin name
+    target_compile_options(YourProjectTargetName PRIVATE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
+    target_include_directories(YourProjectTargetName PRIVATE ${WEBKIT_GTK_INCLUDE_DIRS} ${GTK3_INCLUDE_DIRS})
+    target_link_libraries(YourProjectTargetName PRIVATE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
+endif()
+
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
