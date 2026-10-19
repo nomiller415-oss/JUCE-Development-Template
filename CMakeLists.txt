@@ -103,6 +103,7 @@ juce_add_plugin("${PROJECT_NAME}"
 
     NEEDS_WEBVIEW2 TRUE
     NEEDS_WEB_BROWSER TRUE
+    NEEDS_LINUX_SUBPROCESS_HELPER TRUE 
     # Change me!
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
@@ -206,13 +207,30 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
+    # Force system paths globally so JUCE internal modules resolve <gtk/gtk.h>
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
-    
-    target_compile_options(SharedCode INTERFACE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
-    target_link_libraries(SharedCode INTERFACE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
+
+    # TARGET SPECIFIC RECOVERY LOOP:
+    # We iterate over the actual binary outputs (e.g., NewProject_Standalone)
+    # to register dependencies. This forces JUCE to execute juceaide on a concrete binary target!
+    foreach(format ${FORMATS})
+        set(target_format_name "${PROJECT_NAME}_${format}")
+        
+        if(TARGET ${target_format_name})
+            # Force compile flags & link properties to physical binaries
+            target_compile_options(${target_format_name} PRIVATE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
+            target_link_libraries(${target_format_name} PRIVATE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
+            
+            # Map JUCE's configuration property path specifically to this concrete target
+            target_include_directories(${target_format_name} PRIVATE
+                "${CMAKE_CURRENT_BINARY_DIR}/JUCE/modules/juce_gui_extra/juce_LinuxSubprocessHelper/$<CONFIG>"
+                "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
+            )
+        endif()
+    endforeach()
 endif()
 
 
