@@ -108,8 +108,8 @@ jobs:
 
       - name: Configure
         if: ${{ runner.os != 'Linux'}}
-        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_VERBOSE_MAKEFILE=ON ${{ matrix.extra-flags }}
-             rm -rf ${{ env.BUILD_DIR }} cmake -B ${{ env.BUILD_DIR }} ..
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ${{ matrix.extra-flags }}
+             rm -rf ${{ env.BUILD_DIR }} cmake -B ${{ env.BUILD_DIR }}
              
       - name: Configure Linux
         if: runner.os == 'Linux'
@@ -118,9 +118,8 @@ jobs:
           GTK_CFLAGS="$(pkg-config --cflags gtk+-3.0 2>/dev/null || true)"
           GTK_LIBS="$(pkg-config --libs gtk+-3.0 2>/dev/null || true)"
 
-          echo "--- GTK_CFLAGS ---"
+          
           echo "$GTK_CFLAGS"
-          echo "--- GTK_LIBS ---"
           echo "$GTK_LIBS"
 
           rm -rf "${{ env.BUILD_DIR }}"
@@ -132,7 +131,6 @@ jobs:
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-            -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DCMAKE_C_FLAGS="$GTK_CFLAGS" \
             -DCMAKE_CXX_FLAGS="$GTK_CFLAGS" \
             -DCMAKE_EXE_LINKER_FLAGS="$GTK_LIBS" \
@@ -142,7 +140,7 @@ jobs:
         
 
       - name: Build
-        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} -- -v
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --
 
       - name: Test & Benchmarks
         working-directory: ${{ env.BUILD_DIR }}
@@ -150,7 +148,6 @@ jobs:
 
       - name: Read in .env from CMake # see GitHubENV.cmake
         run: |
-          cat .env # show us the config
           cat .env >> $GITHUB_ENV # pull in our PRODUCT_NAME, etc
 
       - name: Set additional env vars for next steps
