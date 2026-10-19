@@ -90,7 +90,11 @@ if(MSVC)
     set(JUCE_WEBVIEW2_PACKAGE_LOCATION "${CMAKE_BINARY_DIR}/packages")
 endif()
 
-
+if(MSVC OR WIN32)
+    set(USE_WEBVIEW2_BACKEND TRUE)
+else()
+    set(USE_WEBVIEW2_BACKEND FALSE)
+endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
@@ -196,31 +200,19 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
     
-    # Target WebKit 4.1 explicitly to match our clean environment
-    pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.1)
+    pkg_check_modules(WEBKIT_GTK webkit2gtk-4.1)
+    if(NOT WEBKIT_GTK_FOUND)
+        pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.0)
+    endif()
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Apply system include paths globally
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Map the compiler flags directly to SharedCode
     target_compile_options(SharedCode INTERFACE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
     target_link_libraries(SharedCode INTERFACE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
-
-    # THE ABSOLUTE FIX:
-    # Explicitly pull the dynamically generated target path using JUCE's custom property rules.
-    # We then force SharedCode to build *after* the helper binary target exists.
-    if(TARGET juce_linux_subprocess_helper)
-        add_dependencies(SharedCode juce_linux_subprocess_helper)
-        
-        # Inject the exact generation directory using generator expressions
-        target_include_directories(SharedCode INTERFACE
-            "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
-        )
-    endif()
 endif()
 
 
