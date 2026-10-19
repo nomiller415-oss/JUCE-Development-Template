@@ -204,18 +204,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Force paths globally so JUCE targets (like juce_gui_extra) find <gtk/gtk.h>
+    # Force paths globally so JUCE targets and SharedCode resolve headers perfectly
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Direct folder mapping fallback to make sure juceaide generated files 
-    # are tracked inside SharedCode without wiping your standard compiler paths.
-    target_include_directories(SharedCode INTERFACE
-        ${GTK3_INCLUDE_DIRS}
-        ${WEBKIT_GTK_INCLUDE_DIRS}
-        "${CMAKE_CURRENT_BINARY_DIR}"
+    # EXPLICIT CONFIG-SAFE SUBPROCESS RECOVERY:
+    # JUCE hides the helper header in a subdirectory matched to your build configuration.
+    # This maps all possible generation outputs into the build toolchain paths globally.
+    include_directories(
+        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/Debug"
+        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/Release"
+        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/RelWithDebInfo"
         "${CMAKE_CURRENT_BINARY_DIR}/juce_linux_subprocess_helper/juce_linux_subprocess_helper_artefacts"
     )
     
