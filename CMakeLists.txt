@@ -102,9 +102,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
     # Replace "YourProjectTargetName" with your actual CMake target binary/plugin name
-    target_compile_options(YourProjectTargetName PRIVATE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
-    target_include_directories(YourProjectTargetName PRIVATE ${WEBKIT_GTK_INCLUDE_DIRS} ${GTK3_INCLUDE_DIRS})
-    target_link_libraries(YourProjectTargetName PRIVATE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
+    target_compile_options("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
+    target_include_directories("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_INCLUDE_DIRS} ${GTK3_INCLUDE_DIRS})
+    target_link_libraries("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
 endif()
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
