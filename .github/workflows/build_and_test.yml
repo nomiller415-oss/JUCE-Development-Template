@@ -132,7 +132,7 @@ jobs:
       - name: Diagnostic - Locate Subprocess Helper File
         if: runner.os == 'Linux'
         run: |
-          cmake --build ${{ env.BUILD_DIR }} --target juce_linux_subprocess_helpe
+          cmake --build ${{ env.BUILD_DIR }} --target juce_linux_subprocess_helper
           echo "=== Searching for the missing header file ==="
           find . -name "*juce_LinuxSubprocessHelperBinaryData.h*" || true
           
