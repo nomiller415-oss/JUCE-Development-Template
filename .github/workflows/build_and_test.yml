@@ -60,34 +60,29 @@ jobs:
 
       # This also starts up our "fake" display (Xvfb), needed for pluginval
       - name: Install JUCE's Linux Deps
-      if: runner.os == 'Linux'
-      run: |
-        # IPP repo (unchanged)
-        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        if: runner.os == 'Linux'
+        run: |
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
     
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
           build-essential cmake ninja-build pkg-config \
           libasound2-dev libx11-dev libgtk-3-dev libxi-dev libxinerama-dev libxext-dev \
           libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev \
           libgdk-pixbuf2.0-dev libcairo2-dev libpango1.0-dev \
           xvfb
     
-        # Persist PKG_CONFIG_PATH for later steps
-        echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-    
-        # Diagnostics so CI log shows whether gtk headers and pkg-config are available
-        echo "--- pkg-config: cflags for gtk+-3.0 ---"
-        pkg-config --cflags gtk+-3.0 || true
-        echo "--- pkg-config: libs for gtk+-3.0 ---"
-        pkg-config --libs gtk+-3.0 || true
-        echo "--- Check for gtk header file ---"
-        ls -l /usr/include/gtk-3.0/gtk/gtk.h || true
-        echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-    
-        # Start Xvfb for pluginval/gui tests
-        sudo /usr/bin/Xvfb $DISPLAY & 
+       
+          echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "--- pkg-config: cflags for gtk+-3.0 ---"
+          pkg-config --cflags gtk+-3.0 || true
+          echo "--- pkg-config: libs for gtk+-3.0 ---"
+          pkg-config --libs gtk+-3.0 || true
+          echo "--- Check for gtk header file ---"
+          ls -l /usr/include/gtk-3.0/gtk/gtk.h || true
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          sudo /usr/bin/Xvfb $DISPLAY & 
 
       - name: Install IPP (Windows)
         if: (runner.os == 'Windows')
