@@ -185,9 +185,6 @@ target_link_libraries(SharedCode
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    juce_link_with_embedded_linux_subprocess(SharedCode)
-endif()
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
