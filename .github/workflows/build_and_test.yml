@@ -72,17 +72,9 @@ jobs:
             libasound2-dev libx11-dev libgtk-3-dev libxi-dev libxinerama-dev libxext-dev \
             libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev \
             libgdk-pixbuf2.0-dev libcairo2-dev libpango1.0-dev \
-            libwebkit2gtk-4.0-dev \
             xvfb
             
-          pkg-config --cflags gtk+-3.0 || true
-          pkg-config --libs gtk+-3.0 || true
-
-          pkg-config --cflags webkit2gtk-4.0 || true
-          pkg-config --libs webkit2gtk-4.0 || true
-
-          ls -l /usr/include/gtk-3.0/gtk/gtk.h || true
-          ls -l /usr/include/webkit2gtk-4.0/webkit2/webkit.h || true
+          
           echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> "$GITHUB_ENV"
 
           sudo /usr/bin/Xvfb $DISPLAY &
