@@ -204,28 +204,38 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Force paths globally so JUCE targets and SharedCode resolve headers perfectly
+    # Force system paths globally so JUCE modules resolve <gtk/gtk.h>
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # EXPLICIT CONFIG-SAFE SUBPROCESS RECOVERY:
-    # JUCE hides the helper header in a subdirectory matched to your build configuration.
-    # This maps all possible generation outputs into the build toolchain paths globally.
-    include_directories(
-        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/Debug"
-        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/Release"
-        "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/RelWithDebInfo"
-        "${CMAKE_CURRENT_BINARY_DIR}/juce_linux_subprocess_helper/juce_linux_subprocess_helper_artefacts"
-    )
-    
-    # Link the libraries safely via the INTERFACE dependency bubble
+    # Safely forward libraries to the SharedCode interface wrapper
     target_link_libraries(SharedCode INTERFACE 
         ${WEBKIT_GTK_LIBRARIES} 
         ${GTK3_LIBRARIES}
     )
+
+    # RECOVERY FOR GENERATOR EXPRESSION RACES:
+    # Instead of applying to the global folder context, we bind the dynamic 
+    # configuration path directly onto the post-generation hooks of your targets.
+    # This automatically tracks whether GitHub Actions is compiling a Standalone app, VST3, etc.
+    foreach(format ${FORMATS})
+        set(target_format_name "${PROJECT_NAME}_${format}")
+        
+        # Verify the internal JUCE generated target exists before altering properties
+        if(TARGET ${target_format_name})
+            target_include_directories(${target_format_name} PRIVATE
+                "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
+            )
+            target_compile_options(${target_format_name} PRIVATE 
+                ${WEBKIT_GTK_CFLAGS_OTHER} 
+                ${GTK3_CFLAGS_OTHER}
+            )
+        endif()
+    endforeach()
 endif()
+
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
