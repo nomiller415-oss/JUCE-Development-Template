@@ -127,22 +127,7 @@ juce_add_plugin("${PROJECT_NAME}"
 # Without running into ODR violations
 add_library(SharedCode INTERFACE)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(PkgConfig REQUIRED)
-    
-    # Try finding webkit2gtk-4.1 first, fall back to 4.0 if not present
-    pkg_check_modules(WEBKIT_GTK webkit2gtk-4.1)
-    if(NOT WEBKIT_GTK_FOUND)
-        pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.0)
-    endif()
-    
-    pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Replace "YourProjectTargetName" with your actual CMake target binary/plugin name
-    target_compile_options("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
-    target_include_directories("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_INCLUDE_DIRS} ${GTK3_INCLUDE_DIRS})
-    target_link_libraries("${PROJECT_NAME}" PRIVATE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
-endif()
 clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
     CLAP_ID "${BUNDLE_ID}"
     CLAP_FEATURES audio-effect)
@@ -206,6 +191,31 @@ target_link_libraries(SharedCode
 
 # Link the JUCE plugin targets our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
+
+# --- LINUX GTK & WEBKIT INJECTION ---
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(PkgConfig REQUIRED)
+    
+    # Try finding webkit2gtk-4.1 first, fall back to 4.0 if not present
+    pkg_check_modules(WEBKIT_GTK webkit2gtk-4.1)
+    if(NOT WEBKIT_GTK_FOUND)
+        pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.0)
+    endif()
+    
+    pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+
+    # Force paths globally so JUCE targets (like juce_gui_extra) find <gtk/gtk.h>
+    include_directories(SYSTEM 
+        \({GTK3_INCLUDE_DIRS}\){WEBKIT_GTK_INCLUDE_DIRS}
+    )
+    
+    # Apply compiled options and libraries specifically to the main targets
+    target_compile_options("\${PROJECT_NAME}" PRIVATE \({WEBKIT_GTK_CFLAGS_OTHER}\){GTK3_CFLAGS_OTHER})
+    target_link_libraries("\${PROJECT_NAME}" PRIVATE \({WEBKIT_GTK_LIBRARIES}\){GTK3_LIBRARIES})
+    
+    target_compile_options(SharedCode INTERFACE \({WEBKIT_GTK_CFLAGS_OTHER}\){GTK3_CFLAGS_OTHER})
+    target_link_libraries(SharedCode INTERFACE \({WEBKIT_GTK_LIBRARIES}\){GTK3_LIBRARIES})
+endif()
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
