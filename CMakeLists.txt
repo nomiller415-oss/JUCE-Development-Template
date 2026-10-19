@@ -210,10 +210,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Link entirely to SharedCode. This automatically propagates the flags 
-    # downstream to all plugin formats (Standalone, VST3, etc.) and tests.
-    set_property(TARGET SharedCode APPEND PROPERTY 
-        INTERFACE_COMPILE_OPTIONS ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER}
+    # Direct folder mapping fallback to make sure juceaide generated files 
+    # are tracked inside SharedCode without wiping your standard compiler paths.
+    target_include_directories(SharedCode INTERFACE
+        ${GTK3_INCLUDE_DIRS}
+        ${WEBKIT_GTK_INCLUDE_DIRS}
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}/juce_linux_subprocess_helper/juce_linux_subprocess_helper_artefacts"
     )
     
     # Link the libraries safely via the INTERFACE dependency bubble
