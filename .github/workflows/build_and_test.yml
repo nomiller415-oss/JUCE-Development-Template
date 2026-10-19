@@ -72,6 +72,7 @@ jobs:
             libasound2-dev libx11-dev libgtk-3-dev libxi-dev libxinerama-dev libxext-dev \
             libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev \
             libgdk-pixbuf2.0-dev libcairo2-dev libpango1.0-dev \
+            libwebkit2gtk-4.0-dev \
             xvfb
 
           echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> "$GITHUB_ENV"
