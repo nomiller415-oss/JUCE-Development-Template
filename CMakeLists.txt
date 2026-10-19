@@ -196,40 +196,29 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_package(PkgConfig REQUIRED)
     
-    # Try finding webkit2gtk-4.1 first, fall back to 4.0 if not present
-    pkg_check_modules(WEBKIT_GTK webkit2gtk-4.1)
-    if(NOT WEBKIT_GTK_FOUND)
-        pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.0)
-    endif()
-    
+    # Target WebKit 4.1 explicitly to match our clean environment
+    pkg_check_modules(WEBKIT_GTK REQUIRED webkit2gtk-4.1)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
-    # Force system paths globally so JUCE modules resolve <gtk/gtk.h> and <webkit2/webkit.h>
+    # Apply system include paths globally
     include_directories(SYSTEM 
         ${GTK3_INCLUDE_DIRS}
         ${WEBKIT_GTK_INCLUDE_DIRS}
     )
     
-    # Link the libraries safely via the INTERFACE dependency bubble
-    target_link_libraries(SharedCode INTERFACE 
-        ${WEBKIT_GTK_LIBRARIES} 
-        ${GTK3_LIBRARIES}
-    )
+    # Map the compiler flags directly to SharedCode
+    target_compile_options(SharedCode INTERFACE ${WEBKIT_GTK_CFLAGS_OTHER} ${GTK3_CFLAGS_OTHER})
+    target_link_libraries(SharedCode INTERFACE ${WEBKIT_GTK_LIBRARIES} ${GTK3_LIBRARIES})
 
-    # THE CORE JUCE 8/9 LINUX BUGFIX:
-    # JUCE assigns the generated subprocess folder paths dynamically as a PRIVATE property
-    # to 'juce_gui_extra'. Because 'SharedCode' evaluates your source code, we extract 
-    # JUCE's internal generation directories and map them directly into our global include stream.
-    if(TARGET juce_gui_extra)
-        get_target_property(JUCE_EXTRA_INCLUDES juce_gui_extra INCLUDE_DIRECTORIES)
-        if(JUCE_EXTRA_INCLUDES)
-            include_directories(${JUCE_EXTRA_INCLUDES})
-        endif()
+    # THE ABSOLUTE FIX:
+    # Explicitly pull the dynamically generated target path using JUCE's custom property rules.
+    # We then force SharedCode to build *after* the helper binary target exists.
+    if(TARGET juce_linux_subprocess_helper)
+        add_dependencies(SharedCode juce_linux_subprocess_helper)
         
-        # Explicitly forward paths into the SharedCode target bubble as well
+        # Inject the exact generation directory using generator expressions
         target_include_directories(SharedCode INTERFACE
             "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/"
-            "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/"
         )
     endif()
 endif()
