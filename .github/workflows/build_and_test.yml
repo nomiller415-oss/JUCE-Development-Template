@@ -74,7 +74,15 @@ jobs:
             libgdk-pixbuf2.0-dev libcairo2-dev libpango1.0-dev \
             libwebkit2gtk-4.0-dev \
             xvfb
+            
+          pkg-config --cflags gtk+-3.0 || true
+          pkg-config --libs gtk+-3.0 || true
 
+          pkg-config --cflags webkit2gtk-4.0 || true
+          pkg-config --libs webkit2gtk-4.0 || true
+
+          ls -l /usr/include/gtk-3.0/gtk/gtk.h || true
+          ls -l /usr/include/webkit2gtk-4.0/webkit2/webkit.h || true
           echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> "$GITHUB_ENV"
 
           sudo /usr/bin/Xvfb $DISPLAY &
@@ -112,33 +120,48 @@ jobs:
         run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ${{ matrix.extra-flags }}
              
              
-      - name: Configure Linux
+      - name: Configure
         if: runner.os == 'Linux'
         run: |
+          # ensure pkg-config path is present for this step too
           export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+
           GTK_CFLAGS="$(pkg-config --cflags gtk+-3.0 2>/dev/null || true)"
           GTK_LIBS="$(pkg-config --libs gtk+-3.0 2>/dev/null || true)"
 
-          
-          echo "$GTK_CFLAGS"
-          echo "$GTK_LIBS"
+          WEBKIT_CFLAGS="$(pkg-config --cflags webkit2gtk-4.0 2>/dev/null || true)"
+          WEBKIT_LIBS="$(pkg-config --libs webkit2gtk-4.0 2>/dev/null || true)"
 
+          # combine
+          ALL_CFLAGS="${GTK_CFLAGS} ${WEBKIT_CFLAGS}"
+          ALL_LIBS="${GTK_LIBS} ${WEBKIT_LIBS}"
+
+          echo "--- GTK CFLAGS ---"
+          echo "$GTK_CFLAGS"
+          echo "--- WEBKIT CFLAGS ---"
+          echo "$WEBKIT_CFLAGS"
+          echo "--- ALL CFLAGS ---"
+          echo "$ALL_CFLAGS"
+          echo "--- ALL LIBS ---"
+          echo "$ALL_LIBS"
+
+          # force fresh configure so CMake doesn't use stale cache
           rm -rf "${{ env.BUILD_DIR }}"
 
-          CFLAGS="$GTK_CFLAGS" \
-          CXXFLAGS="$GTK_CFLAGS" \
-          LDFLAGS="$GTK_LIBS" \
+          CFLAGS="$ALL_CFLAGS" \
+          CXXFLAGS="$ALL_CFLAGS" \
+          LDFLAGS="$ALL_LIBS" \
           cmake -B "${{ env.BUILD_DIR }}" \
             -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
-            -DCMAKE_C_FLAGS="$GTK_CFLAGS" \
-            -DCMAKE_CXX_FLAGS="$GTK_CFLAGS" \
-            -DCMAKE_EXE_LINKER_FLAGS="$GTK_LIBS" \
-            -DCMAKE_SHARED_LINKER_FLAGS="$GTK_LIBS" \
-            -DCMAKE_MODULE_LINKER_FLAGS="$GTK_LIBS" \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DCMAKE_C_FLAGS="$ALL_CFLAGS" \
+            -DCMAKE_CXX_FLAGS="$ALL_CFLAGS" \
+            -DCMAKE_EXE_LINKER_FLAGS="$ALL_LIBS" \
+            -DCMAKE_SHARED_LINKER_FLAGS="$ALL_LIBS" \
+            -DCMAKE_MODULE_LINKER_FLAGS="$ALL_LIBS" \
             ${{ matrix.extra-flags }}
-        
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --
@@ -207,25 +230,25 @@ jobs:
           SetFile -a C "${{ env.AU_PATH }}"
           SetFile -a C "${{ env.CLAP_PATH }}"
 
-      - name: pkgbuild, Productbuild and Notarize
-        if: ${{ runner.os == 'macOS' }}
-        timeout-minutes: 5
-        run: |
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "packaging/${{ env.PRODUCT_NAME }}.au.pkg"
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.clap.pkg" --version $VERSION --component "${{ env.CLAP_PATH }}" --install-location "/Library/Audio/Plug-Ins/CLAP" "packaging/${{ env.PRODUCT_NAME }}.clap.pkg"
+      # - name: pkgbuild, Productbuild and Notarize
+      #   if: ${{ runner.os == 'macOS' }}
+      #   timeout-minutes: 5
+      #   run: |
+      #     pkgbuild --identifier "${{ env.BUNDLE_ID }}.au.pkg" --version $VERSION --component "${{ env.AU_PATH }}" --install-location "/Library/Audio/Plug-Ins/Components"  "packaging/${{ env.PRODUCT_NAME }}.au.pkg"
+      #     pkgbuild --identifier "${{ env.BUNDLE_ID }}.vst3.pkg" --version $VERSION --component "${{ env.VST3_PATH }}" --install-location "/Library/Audio/Plug-Ins/VST3" "packaging/${{ env.PRODUCT_NAME }}.vst3.pkg"
+      #     pkgbuild --identifier "${{ env.BUNDLE_ID }}.clap.pkg" --version $VERSION --component "${{ env.CLAP_PATH }}" --install-location "/Library/Audio/Plug-Ins/CLAP" "packaging/${{ env.PRODUCT_NAME }}.clap.pkg"
 
-          # Standalone is special, needs a boolean to always install in /Applications
-          pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
-          plutil -replace BundleIsRelocatable -bool NO standalone.plist
-          pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "packaging/${{ env.PRODUCT_NAME }}.app.pkg"
+      #     # Standalone is special, needs a boolean to always install in /Applications
+      #     pkgbuild --analyze --root "$(dirname "${{ env.STANDALONE_PATH }}")" standalone.plist
+      #     plutil -replace BundleIsRelocatable -bool NO standalone.plist
+      #     pkgbuild --identifier "${{ env.BUNDLE_ID }}.app.pkg" --version $VERSION --root "$(dirname "${{ env.STANDALONE_PATH }}")" --component-plist standalone.plist --install-location "/Applications" "packaging/${{ env.PRODUCT_NAME }}.app.pkg"
 
-          cd packaging
-          envsubst < distribution.xml.template > distribution.xml
-          productbuild --resources ./resources --distribution distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "${{ env.ARTIFACT_NAME }}.pkg"
+      #     cd packaging
+      #     envsubst < distribution.xml.template > distribution.xml
+      #     productbuild --resources ./resources --distribution distribution.xml --sign "${{ secrets.DEVELOPER_ID_INSTALLER }}" --timestamp "${{ env.ARTIFACT_NAME }}.pkg"
 
-          xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
-          xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
+      #     xcrun notarytool submit "${{ env.ARTIFACT_NAME }}.pkg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
+      #     xcrun stapler staple "${{ env.ARTIFACT_NAME }}.pkg"
 
       - name: Zip
         if: ${{ runner.os == 'Linux' }}
