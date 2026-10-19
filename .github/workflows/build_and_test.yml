@@ -117,6 +117,7 @@ jobs:
 
       - name: Configure
         run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_VERBOSE_MAKEFILE=ON ${{ matrix.extra-flags }}
+             rm -rf ${{ env.BUILD_DIR }} cmake -B ${{ env.BUILD_DIR }} ..
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} -- -v
