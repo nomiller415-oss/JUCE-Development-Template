@@ -67,6 +67,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
 
           sudo apt-get update
+          echo "test test"
           sudo apt-get install -y --no-install-recommends \
           build-essential cmake ninja-build pkg-config \
           libasound2-dev libx11-dev libgtk-3-dev libxi-dev libxinerama-dev libxext-dev \
