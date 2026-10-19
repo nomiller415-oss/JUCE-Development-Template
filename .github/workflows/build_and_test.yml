@@ -76,15 +76,6 @@ jobs:
 
           echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> "$GITHUB_ENV"
 
-          echo "--- which pkg-config ---"
-          which pkg-config || true
-          echo "--- pkg-config --cflags gtk+-3.0 ---"
-          pkg-config --cflags gtk+-3.0 || true
-          echo "--- pkg-config --libs gtk+-3.0 ---"
-          pkg-config --libs gtk+-3.0 || true
-          echo "--- check gtk header ---"
-          ls -l /usr/include/gtk-3.0/gtk/gtk.h || true
-
           sudo /usr/bin/Xvfb $DISPLAY &
 
       - name: Install IPP (Windows)
@@ -116,8 +107,39 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Configure
+        if: ${{ runner.os != 'Linux'}}
         run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_VERBOSE_MAKEFILE=ON ${{ matrix.extra-flags }}
              rm -rf ${{ env.BUILD_DIR }} cmake -B ${{ env.BUILD_DIR }} ..
+             
+      - name: Configure Linux
+        if: runner.os == 'Linux'
+        run: |
+          export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+          GTK_CFLAGS="$(pkg-config --cflags gtk+-3.0 2>/dev/null || true)"
+          GTK_LIBS="$(pkg-config --libs gtk+-3.0 2>/dev/null || true)"
+
+          echo "--- GTK_CFLAGS ---"
+          echo "$GTK_CFLAGS"
+          echo "--- GTK_LIBS ---"
+          echo "$GTK_LIBS"
+
+          rm -rf "${{ env.BUILD_DIR }}"
+
+          CFLAGS="$GTK_CFLAGS" \
+          CXXFLAGS="$GTK_CFLAGS" \
+          LDFLAGS="$GTK_LIBS" \
+          cmake -B "${{ env.BUILD_DIR }}" \
+            -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}" \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DCMAKE_C_FLAGS="$GTK_CFLAGS" \
+            -DCMAKE_CXX_FLAGS="$GTK_CFLAGS" \
+            -DCMAKE_EXE_LINKER_FLAGS="$GTK_LIBS" \
+            -DCMAKE_SHARED_LINKER_FLAGS="$GTK_LIBS" \
+            -DCMAKE_MODULE_LINKER_FLAGS="$GTK_LIBS" \
+            ${{ matrix.extra-flags }}
+        
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} -- -v
