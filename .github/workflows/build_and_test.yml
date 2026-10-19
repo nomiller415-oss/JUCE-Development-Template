@@ -132,12 +132,15 @@ jobs:
       - name: Diagnostic - Locate Subprocess Helper File
         if: runner.os == 'Linux'
         run: |
-          cmake --build ${{ env.BUILD_DIR }} --target juce_linux_subprocess_helper
-          echo "=== Searching for the missing header file ==="
-          find . -name "*juce_LinuxSubprocessHelperBinaryData.h*" || true
+      - name: Build Subprocess Helper Artifacts
+        if: runner.os == 'Linux'
+        run: |
+          # Step A: Build juce_gui_extra completely to force the juceaide resource generation command
+          cmake --build ${{ env.BUILD_DIR }} --target juce_gui_extra
           
-          echo "=== Checking juceaide generation artifacts ==="
-          find . -type d -name "*juce_LinuxSubprocessHelper*" || true
+          # Step B: Run your diagnostic validation step right after to verify the header exists
+          echo "=== Searching for the generated header file ==="
+          find . -name "*juce_LinuxSubprocessHelperBinaryData.h*" || true
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --
